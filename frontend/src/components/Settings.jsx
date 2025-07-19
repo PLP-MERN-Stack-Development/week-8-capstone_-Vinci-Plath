@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import PinGate from './PinGate';
 import ContactList from './ContactList';
 import AddContactForm from './AddContactForm';
 
-const Settings = ({ onFail }) => {
+const Settings = ({ onFail, onLogout }) => {
   const [unlocked, setUnlocked] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const refreshContacts = () => setRefresh(r => r + 1);
@@ -18,6 +20,18 @@ const Settings = ({ onFail }) => {
   useEffect(() => { localStorage.setItem('checkin_default', checkinDefault); }, [checkinDefault]);
   useEffect(() => { localStorage.setItem('gbv_contact', gbvContact); }, [gbvContact]);
   useEffect(() => { localStorage.setItem('vibration', vibration); }, [vibration]);
+
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const result = await logout();
+    if (result.success) {
+      navigate('/login');
+    } else {
+      console.error('Logout failed:', result.error);
+    }
+  };
 
   if (!unlocked) {
     return <PinGate onSuccess={() => setUnlocked(true)} onFail={onFail || (() => setUnlocked(false))} />;
@@ -65,18 +79,45 @@ const Settings = ({ onFail }) => {
           />
         </div>
         <div style={{ margin: '12px 0' }}>
-          <label style={{ fontWeight: 500 }}>Vibration Feedback:</label>
-          <input
-            type="checkbox"
-            checked={vibration}
-            onChange={e => setVibration(e.target.checked)}
-            style={{ marginLeft: 8 }}
-          />
-          <span style={{ marginLeft: 8, fontSize: 14, color: '#888' }}>{vibration ? 'Enabled' : 'Disabled'}</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={vibration}
+              onChange={e => setVibration(e.target.checked)}
+            />
+            Enable Vibration
+          </label>
+        </div>
+        
+        <div style={{ margin: '24px 0', paddingTop: '16px', borderTop: '1px solid #eee' }}>
+          <button 
+            onClick={handleLogout}
+            style={{
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Logout
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default Settings; 
+export default Settings;

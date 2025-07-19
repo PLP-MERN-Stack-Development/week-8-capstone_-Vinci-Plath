@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Journal from './components/Journal';
 import Settings from './components/Settings';
 import ActionScreen from './components/ActionScreen';
 import OnboardingOverlay from './components/OnboardingOverlay';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import './App.css';
 
 const NAV = {
   JOURNAL: 'journal',
@@ -11,19 +17,35 @@ const NAV = {
   SETTINGS: 'settings',
 };
 
-function App() {
+// Main app content that requires authentication
+const AppContent = () => {
+  const { user, loading, logout: authLogout } = useAuth();
+  const location = useLocation();
   const [view, setView] = useState(NAV.JOURNAL);
-  // Settings for theme, font, background (stubbed for now)
   const [settings, setSettings] = useState({
-    theme: 'warm', // warm | dark
-    font: 'Inter', // Inter | Nunito | Roboto Slab
-    background: 'plain', // plain | lined | gradient
+    theme: 'warm',
+    font: 'Inter',
+    background: 'plain',
   });
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('onboarding_dismissed'));
+
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Reset view when location changes
+  useEffect(() => {
+    setView(NAV.JOURNAL);
+  }, [location]);
 
   const handleSettingsChange = (change) => {
     setSettings(prev => ({ ...prev, ...change }));
   };
+
   const handleDismissOnboarding = () => {
     localStorage.setItem('onboarding_dismissed', '1');
     setShowOnboarding(false);
@@ -41,6 +63,15 @@ function App() {
     trackMouse: true,
   });
 
+  // If not authenticated, redirect to login
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
   return (
     <div
       {...handlers}
@@ -57,12 +88,46 @@ function App() {
         position: 'relative',
       }}
     >
-      {view === NAV.JOURNAL && <Journal settings={settings} onToggleTheme={() => setSettings(s => ({ ...s, theme: s.theme === 'dark' ? 'warm' : 'dark' }))} />}
+      {view === NAV.JOURNAL && (
+        <Journal 
+          settings={settings} 
+          onToggleTheme={() => setSettings(s => ({ ...s, theme: s.theme === 'dark' ? 'warm' : 'dark' }))} 
+        />
+      )}
       {view === NAV.ACTION && <ActionScreen onReturn={() => setView(NAV.JOURNAL)} />}
-      {view === NAV.SETTINGS && <Settings onFail={() => setView(NAV.JOURNAL)} onSettingsChange={handleSettingsChange} hideTheme font={settings.font} background={settings.background} />}
+      {view === NAV.SETTINGS && (
+        <Settings 
+          onFail={() => setView(NAV.JOURNAL)} 
+          onSettingsChange={handleSettingsChange} 
+          hideTheme 
+          font={settings.font} 
+          background={settings.background} 
+          onLogout={handleLogout}
+        />
+      )}
       {showOnboarding && <OnboardingOverlay onDismiss={handleDismissOnboarding} />}
     </div>
   );
-}
+};
+
+// Main App component with routing
+const App = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <AppContent />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
 
 export default App;

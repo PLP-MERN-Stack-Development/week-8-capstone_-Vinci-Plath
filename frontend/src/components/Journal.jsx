@@ -24,7 +24,15 @@ const saveEntries = (entries) => {
   localStorage.setItem('journal_entries', JSON.stringify(entries));
 };
 
-const Journal = ({ settings, onToggleTheme }) => {
+const defaultSettings = {
+  theme: 'light',
+  background: 'plain',
+  fontSize: 'medium'
+};
+
+const Journal = ({ settings = defaultSettings, onToggleTheme }) => {
+  // Ensure settings has all required properties
+  const safeSettings = { ...defaultSettings, ...settings };
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [dateTime, setDateTime] = useState(getDateTime());
@@ -40,10 +48,10 @@ const Journal = ({ settings, onToggleTheme }) => {
   }, [entries]);
 
   let bgStyle = {};
-  if (settings.background === 'lined') bgStyle = linedBg;
-  else if (settings.background === 'gradient') bgStyle = gradientBg;
+  if (safeSettings.background === 'lined') bgStyle = linedBg;
+  else if (safeSettings.background === 'gradient') bgStyle = gradientBg;
 
-  const isDark = settings.theme === 'dark';
+  const isDark = safeSettings.theme === 'dark';
 
   const handleSave = () => {
     if (!text.trim() && !title.trim()) return;

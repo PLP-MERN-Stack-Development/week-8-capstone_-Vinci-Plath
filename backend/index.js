@@ -21,10 +21,13 @@ mongoose.connect(process.env.MONGODB_URI, {
     process.exit(1);
   });
 
+const authRouter = require('./routes/auth');
 const contactsRouter = require('./routes/contacts');
 const sosRouter = require('./routes/sos');
 const checkinRouter = require('./routes/checkin');
+
 app.use(express.json());
+app.use('/api/auth', authRouter);
 app.use('/api/contacts', contactsRouter);
 app.use('/api/sos', sosRouter);
 app.use('/api/checkin', checkinRouter);
