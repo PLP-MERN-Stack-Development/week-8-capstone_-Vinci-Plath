@@ -140,8 +140,7 @@ Authorization: Bearer <your_jwt_token>
 
 ### Getting Started
 1. **Registration & Login**
-   - Create an account with your email and a strong password
-   - Verify your email address (if email verification is enabled)
+   - Create an account with your email and a password of no less than 8 characters.
    - Log in to access your personal safety dashboard
 
 ### Navigation
@@ -151,12 +150,13 @@ Authorization: Bearer <your_jwt_token>
 
 - **Action Screen (Swipe right from Journal)**
   - Access SOS and Check-in features
-  - View current check-in status
+
 
 - **Settings (Swipe left from Journal)**
   - Manage your profile
   - Configure safety settings
   - Set up emergency contacts
+  - Set your check-in interval (e.g., 15 minutes, 10 minutes, 5 minutes)
 
 ### Safety Features
 
@@ -167,24 +167,21 @@ Authorization: Bearer <your_jwt_token>
    - Confirm the emergency alert if prompted
 
 2. **What Happens Next**
-   - Your emergency contacts receive an alert with your location
-   - The app sends periodic location updates
-   - Authorities are notified if you've enabled this feature
+   - Your emergency contacts receive an alert with your location.
+   - App returns to decoy journal screen.
 
 #### ⏰ Safety Check-ins
 1. **Starting a Check-in Timer**
-   - Go to Settings > Safety Check-ins
-   - Set your check-in interval (e.g., 1 hour, 4 hours, 12 hours)
-   - The timer starts automatically
+   - Swipe right to access the Action screen.
+   - Click CheckIn button. The timer starts automatically. 
 
-2. **Completing a Check-in**
-   - When prompted, open the app
-   - Tap "I'm Safe" to confirm your status
-   - The timer will reset automatically
+2. **Cancelling a Check-in**
+   - Tap countdown to cancel if safe.
+
 
 3. **Missed Check-ins**
-   - If you don't check in, your emergency contacts are notified
-   - The app sends your last known location
+   - If you don't cancel check in countdown and timer expires, app sends SOS alert to your emergency contacts.
+   - App returns to decoy journal screen.
 
 ### Managing Emergency Contacts
 1. **Adding Contacts**
@@ -192,6 +189,8 @@ Authorization: Bearer <your_jwt_token>
    - Tap "Add Contact"
    - Enter their name and phone number/email
    - Save the contact
+   - Delete or edit contact as needed.
+   - Add a GBV support centre contact if desired.
 
 2. **Testing Alerts**
    - Use the "Test Alert" button to send a test notification
@@ -210,8 +209,7 @@ Authorization: Bearer <your_jwt_token>
 
 - **Can't Log In**
   - Reset your password if needed
-  - Verify your email address
-  - Contact support if issues persist
+  - Contact support if issues persist.
 
 ## 🛡 Security Features
 - End-to-end encrypted messages
