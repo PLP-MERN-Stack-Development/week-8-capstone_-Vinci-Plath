@@ -77,10 +77,10 @@ pnpm install
 #### Option 1: Run separately
 ```bash
 # In backend directory
-pnpm dev
+pnpm start
 
 # In a new terminal, frontend directory
-pnpm dev
+pnpm run dev
 ```
 
 #### Option 2: Using concurrently (from root)
@@ -92,23 +92,126 @@ concurrently "cd backend && pnpm dev" "cd frontend && pnpm dev"
 
 The app should now be running at `http://localhost:5173`
 
+## 📚 API Documentation
+
+Implemented comprehensive API documentation using Swagger/OpenAPI. You can access the interactive documentation when the backend server is running.
+
+### Accessing API Docs
+1. Start the backend server:
+   ```bash
+   cd backend
+   pnpm dev
+   ```
+2. Open your browser to: [http://localhost:5001/api-docs/](http://localhost:5001/api-docs/)
+
+### Available Endpoints
+
+#### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login user
+- `GET /api/auth/me` - Get current user profile
+- `POST /api/auth/logout` - Logout user
+
+#### SOS
+- `POST /api/sos` - Trigger an SOS alert
+
+#### Check-in
+- `POST /api/checkin/start` - Start a safety check-in timer
+- `POST /api/checkin/cancel` - Cancel an active check-in
+- `POST /api/checkin/complete` - Complete a check-in
+
+#### Contacts
+- `GET /api/contacts` - List all contacts
+- `POST /api/contacts` - Create a new contact
+- `PUT /api/contacts/:id` - Update a contact
+- `DELETE /api/contacts/:id` - Delete a contact
+
+#### Health
+- `GET /api/health/health` - Health check status
+- `GET /api/health/metrics` - System metrics
+
+### Authentication
+All protected endpoints require a JWT token in the Authorization header:
+```
+Authorization: Bearer <your_jwt_token>
+```
+
 ## 📱 User Guide
 
-### Basic Navigation
-- **Swipe right** from Journal → Action screen (SOS & Check-in)
-- **Swipe left** from Journal → Settings
-- **Swipe back** to return to Journal from any screen
+### Getting Started
+1. **Registration & Login**
+   - Create an account with your email and a strong password
+   - Verify your email address (if email verification is enabled)
+   - Log in to access your personal safety dashboard
 
-### Using SOS Feature
-1. Swipe right to access Action screen
-2. Press and hold the SOS button
-3. Your emergency contacts will be notified with your location
+### Navigation
+- **Journal Screen (Home)**
+  - View and add journal entries (decoy feature)
+  - Access other features via swipe gestures
 
-### Setting Up Check-ins
-1. Go to Settings
-2. Set your check-in interval
-3. Enable automatic check-ins
-4. The app will remind you to check in
+- **Action Screen (Swipe right from Journal)**
+  - Access SOS and Check-in features
+  - View current check-in status
+
+- **Settings (Swipe left from Journal)**
+  - Manage your profile
+  - Configure safety settings
+  - Set up emergency contacts
+
+### Safety Features
+
+#### 🆘 Emergency SOS
+1. **Activation**
+   - Swipe right to access the Action screen
+   - Press and hold the SOS button for 3 seconds
+   - Confirm the emergency alert if prompted
+
+2. **What Happens Next**
+   - Your emergency contacts receive an alert with your location
+   - The app sends periodic location updates
+   - Authorities are notified if you've enabled this feature
+
+#### ⏰ Safety Check-ins
+1. **Starting a Check-in Timer**
+   - Go to Settings > Safety Check-ins
+   - Set your check-in interval (e.g., 1 hour, 4 hours, 12 hours)
+   - The timer starts automatically
+
+2. **Completing a Check-in**
+   - When prompted, open the app
+   - Tap "I'm Safe" to confirm your status
+   - The timer will reset automatically
+
+3. **Missed Check-ins**
+   - If you don't check in, your emergency contacts are notified
+   - The app sends your last known location
+
+### Managing Emergency Contacts
+1. **Adding Contacts**
+   - Go to Settings > Emergency Contacts
+   - Tap "Add Contact"
+   - Enter their name and phone number/email
+   - Save the contact
+
+2. **Testing Alerts**
+   - Use the "Test Alert" button to send a test notification
+   - Verify your contacts receive the alert
+
+### Customization
+- **Theme**: Toggle between light and dark mode in Settings
+- **Privacy**: Control location sharing and data collection
+- **Notifications**: Configure alert preferences and sounds
+
+### Troubleshooting
+- **App Not Sending Alerts**
+  - Check your internet connection
+  - Verify notification permissions
+  - Ensure location services are enabled
+
+- **Can't Log In**
+  - Reset your password if needed
+  - Verify your email address
+  - Contact support if issues persist
 
 ## 🛡 Security Features
 - End-to-end encrypted messages

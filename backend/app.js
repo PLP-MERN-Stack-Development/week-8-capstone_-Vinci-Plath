@@ -3,16 +3,20 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
-const errorTracking = require('./middleware/errorTracking');
-const performanceMonitoring = require('./middleware/performanceMonitoring');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+// Temporarily disabled for Swagger testing
+// const errorTracking = require('./middleware/errorTracking');
+// const performanceMonitoring = require('./middleware/performanceMonitoring');
 const healthRouter = require('./routes/health');
 const authRouter = require('./routes/auth');
 
 const app = express();
 
 // Middleware
-app.use(errorTracking);
-app.use(performanceMonitoring);
+// Temporarily disabled for Swagger testing
+// app.use(errorTracking);
+// app.use(performanceMonitoring);
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
@@ -21,7 +25,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Routes
+// API Documentation
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Safety App API Docs'
+  }));
+}
+
+// API Routes
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 

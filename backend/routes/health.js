@@ -3,7 +3,60 @@ const router = express.Router();
 const os = require('os');
 const process = require('process');
 
-// Health check endpoint
+/**
+ * @swagger
+ * tags:
+ *   name: Health
+ *   description: Health check and system metrics
+ */
+
+/**
+ * @swagger
+ * /api/health/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Application health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: healthy
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 uptime:
+ *                   type: number
+ *                   description: Process uptime in seconds
+ *                 memoryUsage:
+ *                   type: object
+ *                   properties:
+ *                     rss:
+ *                       type: number
+ *                       description: Resident Set Size (RSS) in bytes
+ *                     heapTotal:
+ *                       type: number
+ *                       description: Total size of the allocated heap in bytes
+ *                     heapUsed:
+ *                       type: number
+ *                       description: Actual memory used in bytes
+ *                 load:
+ *                   type: array
+ *                   items:
+ *                     type: number
+ *                   description: System load averages for 1, 5, and 15 minutes
+ *                 nodeVersion:
+ *                   type: string
+ *                   example: v14.17.0
+ *                 environment:
+ *                   type: string
+ *                   example: development
+ */
 router.get('/health', (req, res) => {
   const health = {
     status: 'healthy',
@@ -17,7 +70,47 @@ router.get('/health', (req, res) => {
   res.json(health);
 });
 
-// Metrics endpoint
+/**
+ * @swagger
+ * /api/health/metrics:
+ *   get:
+ *     summary: System metrics endpoint
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: System and application metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 memory:
+ *                   type: object
+ *                   properties:
+ *                     heapTotal:
+ *                       type: number
+ *                       description: Total size of the allocated heap in bytes
+ *                     heapUsed:
+ *                       type: number
+ *                       description: Actual memory used in bytes
+ *                     rss:
+ *                       type: number
+ *                       description: Resident Set Size (RSS) in bytes
+ *                 uptime:
+ *                   type: number
+ *                   description: Process uptime in seconds
+ *                 loadAverage:
+ *                   type: array
+ *                   items:
+ *                     type: number
+ *                   description: System load averages for 1, 5, and 15 minutes
+ *                 cpuCount:
+ *                   type: integer
+ *                   description: Number of CPU cores
+ */
 router.get('/metrics', (req, res) => {
   const metrics = {
     timestamp: new Date().toISOString(),

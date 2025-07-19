@@ -3,7 +3,73 @@ const router = express.Router();
 const Checkin = require('../models/Checkin');
 const SOSEvent = require('../models/SOSEvent');
 
-// POST /api/checkin/start - Start a check-in timer
+/**
+ * @swagger
+ * tags:
+ *   name: Check-in
+ *   description: User check-in functionality for safety monitoring
+ */
+
+/**
+ * @swagger
+ * /api/checkin/start:
+ *   post:
+ *     summary: Start a safety check-in timer
+ *     tags: [Check-in]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - durationMinutes
+ *               - location
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID of the user starting the check-in
+ *               durationMinutes:
+ *                 type: integer
+ *                 description: Duration in minutes before check-in expires
+ *                 example: 60
+ *               location:
+ *                 type: object
+ *                 required:
+ *                   - lat
+ *                   - lng
+ *                 properties:
+ *                   lat:
+ *                     type: number
+ *                     format: float
+ *                   lng:
+ *                     type: number
+ *                     format: float
+ *     responses:
+ *       201:
+ *         description: Check-in timer started successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Check-in started
+ *                 checkin:
+ *                   $ref: '#/components/schemas/Checkin'
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Not authenticated
+ */
 router.post('/start', async (req, res) => {
   try {
     const { userId, durationMinutes, location } = req.body;
@@ -16,7 +82,50 @@ router.post('/start', async (req, res) => {
   }
 });
 
-// POST /api/checkin/cancel - Cancel a check-in timer
+/**
+ * @swagger
+ * /api/checkin/cancel:
+ *   post:
+ *     summary: Cancel an active check-in timer
+ *     tags: [Check-in]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID of the user canceling the check-in
+ *     responses:
+ *       200:
+ *         description: Check-in cancelled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Check-in cancelled
+ *                 checkin:
+ *                   $ref: '#/components/schemas/Checkin'
+ *       400:
+ *         description: Invalid input
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: No active check-in found
+ */
 router.post('/cancel', async (req, res) => {
   try {
     const { userId } = req.body;
