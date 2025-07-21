@@ -12,7 +12,7 @@ const process = require('process');
 
 /**
  * @swagger
- * /api/health/health:
+ * /api/health:
  *   get:
  *     summary: Health check endpoint
  *     tags: [Health]
@@ -57,7 +57,7 @@ const process = require('process');
  *                   type: string
  *                   example: development
  */
-router.get('/health', (req, res) => {
+router.get('/', (req, res) => {
   const health = {
     status: 'healthy',
     timestamp: new Date().toISOString(),

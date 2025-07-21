@@ -1,16 +1,50 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../index');
+const jwt = require('jsonwebtoken');
+const { app } = require('./setup');
+const User = require('../models/User');
+const Contact = require('../models/Contact');
 
 describe('API Integration Tests', () => {
   let contactId;
-  let userId = new mongoose.Types.ObjectId().toString();
+  let authToken;
+  let testUser;
+
+  // Helper function to create a test user and get auth token
+  const createTestUser = async () => {
+    // Clean up any existing test user
+    await User.deleteOne({ email: 'api-test@example.com' });
+    
+    // Create user
+    const user = new User({
+      name: 'API Test User',
+      email: 'api-test@example.com',
+      password: 'password123',
+      phone: '+1234567890'
+    });
+    await user.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || 'test-secret-key',
+      { expiresIn: '1h' }
+    );
+
+    return { user, token };
+  };
 
   beforeAll(async () => {
-    // Optionally connect to a test DB here
+    // Create test user and get auth token
+    const { user, token } = await createTestUser();
+    testUser = user;
+    authToken = token;
   });
 
   afterAll(async () => {
+    // Clean up test data
+    await User.deleteOne({ _id: testUser._id });
+    await Contact.deleteMany({ user: testUser._id });
     await mongoose.connection.close();
   });
 
@@ -23,35 +57,71 @@ describe('API Integration Tests', () => {
 
   // Contacts CRUD
   it('POST /api/contacts should add a contact', async () => {
+    const contactData = { 
+      name: 'Test Contact', 
+      phone: '1234567890', 
+      relationship: 'friend',
+      isEmergencyContact: true
+    };
+    
     const res = await request(app)
       .post('/api/contacts')
-      .send({ name: 'Test User', phone: '1234567890', relationship: 'friend' });
+      .set('Authorization', `Bearer ${authToken}`)
+      .send(contactData);
+      
     expect(res.statusCode).toBe(201);
-    expect(res.body).toHaveProperty('_id');
-    contactId = res.body._id;
+    expect(res.body).toHaveProperty('success', true);
+    expect(res.body.contact).toHaveProperty('_id');
+    expect(res.body.contact.name).toBe(contactData.name);
+    contactId = res.body.contact._id;
   });
 
   it('GET /api/contacts should list contacts', async () => {
-    const res = await request(app).get('/api/contacts');
+    const res = await request(app)
+      .get('/api/contacts')
+      .set('Authorization', `Bearer ${authToken}`);
+      
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.some(c => c._id === contactId)).toBe(true);
+    
+    // Verify the contact we just created is in the list
+    const contact = res.body.find(c => c._id === contactId);
+    expect(contact).toBeDefined();
+    expect(contact.name).toBe('Test Contact');
   });
 
   it('DELETE /api/contacts/:id should delete a contact', async () => {
-    const res = await request(app).delete(`/api/contacts/${contactId}`);
+    const res = await request(app)
+      .delete(`/api/contacts/${contactId}`)
+      .set('Authorization', `Bearer ${authToken}`);
+      
     expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
     expect(res.body.message).toMatch(/deleted/i);
+    
+    // Verify the contact was actually deleted
+    const deletedContact = await Contact.findById(contactId);
+    expect(deletedContact).toBeNull();
   });
 
   // SOS
   it('POST /api/sos should trigger SOS alert', async () => {
     const res = await request(app)
       .post('/api/sos')
-      .send({ location: { lat: 1.23, lng: 4.56 } });
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ 
+        location: { 
+          lat: 1.23, 
+          lng: 4.56 
+        } 
+      });
+      
     expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty('success', true);
     expect(res.body.message).toMatch(/sos/i);
     expect(res.body.sosEvent).toBeDefined();
+    expect(res.body.sosEvent.location).toHaveProperty('lat', 1.23);
+    expect(res.body.sosEvent.location).toHaveProperty('lng', 4.56);
   });
 
   // Check-in

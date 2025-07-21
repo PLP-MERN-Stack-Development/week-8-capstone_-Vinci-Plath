@@ -16,6 +16,7 @@ const protect = async (req, res, next) => {
 
   // Check if token exists
   if (!token) {
+    console.error('No token provided');
     return res.status(401).json({ 
       success: false,
       message: 'Not authorized to access this route' 
@@ -24,16 +25,41 @@ const protect = async (req, res, next) => {
 
   try {
     // Verify token
+    console.log('Verifying token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
+    if (!decoded || !decoded.id) {
+      console.error('Invalid token payload:', decoded);
+      throw new Error('Invalid token payload');
+    }
+    
+    console.log('Token verified, finding user with ID:', decoded.id);
     // Get user from the token
-    req.user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) {
+      console.error('User not found with ID:', decoded.id);
+      throw new Error('User not found');
+    }
+    
+    req.user = user;
+    console.log('User authenticated:', { id: user._id, email: user.email });
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('Authentication error:', error.message);
+    console.error('Error details:', error);
+    
+    let errorMessage = 'Not authorized, token failed';
+    if (error.name === 'JsonWebTokenError') {
+      errorMessage = 'Invalid token';
+    } else if (error.name === 'TokenExpiredError') {
+      errorMessage = 'Token expired';
+    }
+    
     return res.status(401).json({ 
       success: false,
-      message: 'Not authorized, token failed' 
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

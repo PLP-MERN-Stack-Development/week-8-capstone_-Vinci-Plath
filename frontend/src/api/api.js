@@ -1,61 +1,104 @@
-const BASE = import.meta.env.VITE_API_URL;
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.warn('No authentication token found in localStorage');
+    return { 'Content-Type': 'application/json' };
+  }
+  return { 
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
+};
+
+// Helper function to handle API responses
+const handleResponse = async (response) => {
+  if (response.status === 401) {
+    // Token might be expired or invalid
+    console.warn('Authentication failed - redirecting to login');
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+    throw new Error('Authentication required');
+  }
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Request failed');
+  }
+  
+  return response.json();
+};
+
+// Helper function to make authenticated requests
+const fetchWithAuth = async (url, options = {}) => {
+  const headers = {
+    ...getAuthHeaders(),
+    ...(options.headers || {})
+  };
+
+  const config = {
+    ...options,
+    headers,
+    credentials: 'include' // Important for cookies if using them
+  };
+
+  try {
+    const response = await fetch(`${BASE}${url}`, config);
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+};
 
 const api = {
+  // Contacts
   async getContacts() {
-    const res = await fetch(`${BASE}/api/contacts`);
-    if (!res.ok) throw new Error('Failed to fetch contacts');
-    return res.json();
+    return fetchWithAuth('/api/contacts', { method: 'GET' });
   },
+  
   async addContact(contact) {
-    const res = await fetch(`${BASE}/api/contacts`, {
+    return fetchWithAuth('/api/contacts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(contact),
+      body: JSON.stringify(contact)
     });
-    if (!res.ok) throw new Error('Failed to add contact');
-    return res.json();
   },
+  
   async updateContact(id, contact) {
-    const res = await fetch(`${BASE}/api/contacts/${id}`, {
+    return fetchWithAuth(`/api/contacts/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(contact),
+      body: JSON.stringify(contact)
     });
-    if (!res.ok) throw new Error('Failed to update contact');
-    return res.json();
   },
+  
   async deleteContact(id) {
-    const res = await fetch(`${BASE}/api/contacts/${id}`, {
-      method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete contact');
-    return res.json();
+    return fetchWithAuth(`/api/contacts/${id}`, {
+      method: 'DELETE'
+    });
   },
+  
+  // Check-in
   async startCheckin({ userId, durationMinutes, location }) {
-    const res = await fetch(`${BASE}/api/checkin/start`, {
+    return fetchWithAuth('/api/checkin/start', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, durationMinutes, location }),
+      body: JSON.stringify({ userId, durationMinutes, location })
     });
-    if (!res.ok) throw new Error('Failed to start check-in');
-    return res.json();
   },
+  
   async cancelCheckin({ userId }) {
-    const res = await fetch(`${BASE}/api/checkin/cancel`, {
+    return fetchWithAuth('/api/checkin/cancel', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId })
     });
-    if (!res.ok) throw new Error('Failed to cancel check-in');
-    return res.json();
   },
+  
   async triggerCheckin({ userId, location }) {
-    const res = await fetch(`${BASE}/api/checkin/trigger`, {
+    return fetchWithAuth('/api/checkin/trigger', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, location }),
+      body: JSON.stringify({ userId, location })
     });
-    if (!res.ok) throw new Error('Failed to trigger auto-SOS');
-    return res.json();
   },
 };
 

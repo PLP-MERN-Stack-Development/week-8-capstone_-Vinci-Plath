@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Journal from './components/Journal';
+import AffirmHub from './components/AffirmHub/AffirmHub';
 import Settings from './components/Settings';
 import ActionScreen from './components/ActionScreen';
 import OnboardingOverlay from './components/OnboardingOverlay';
@@ -12,7 +12,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import './App.css';
 
 const NAV = {
-  JOURNAL: 'journal',
+  AFFIRM_HUB: 'affirm-hub',
   ACTION: 'action',
   SETTINGS: 'settings',
 };
@@ -21,7 +21,7 @@ const NAV = {
 const AppContent = () => {
   const { user, loading, logout: authLogout } = useAuth();
   const location = useLocation();
-  const [view, setView] = useState(NAV.JOURNAL);
+  const [view, setView] = useState(NAV.AFFIRM_HUB);
   const [settings, setSettings] = useState({
     theme: 'warm',
     font: 'Inter',
@@ -39,7 +39,7 @@ const AppContent = () => {
 
   // Reset view when location changes
   useEffect(() => {
-    setView(NAV.JOURNAL);
+    setView(NAV.AFFIRM_HUB);
   }, [location]);
 
   const handleSettingsChange = (change) => {
@@ -53,12 +53,12 @@ const AppContent = () => {
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      if (view === NAV.JOURNAL) setView(NAV.SETTINGS);
-      else if (view === NAV.ACTION) setView(NAV.JOURNAL);
+      if (view === NAV.AFFIRM_HUB) setView(NAV.SETTINGS);
+      else if (view === NAV.ACTION) setView(NAV.AFFIRM_HUB);
     },
     onSwipedRight: () => {
-      if (view === NAV.JOURNAL) setView(NAV.ACTION);
-      else if (view === NAV.SETTINGS) setView(NAV.JOURNAL);
+      if (view === NAV.AFFIRM_HUB) setView(NAV.ACTION);
+      else if (view === NAV.SETTINGS) setView(NAV.AFFIRM_HUB);
     },
     trackMouse: true,
   });
@@ -88,16 +88,16 @@ const AppContent = () => {
         position: 'relative',
       }}
     >
-      {view === NAV.JOURNAL && (
-        <Journal 
+      {view === NAV.AFFIRM_HUB && (
+        <AffirmHub 
           settings={settings} 
           onToggleTheme={() => setSettings(s => ({ ...s, theme: s.theme === 'dark' ? 'warm' : 'dark' }))} 
         />
       )}
-      {view === NAV.ACTION && <ActionScreen onReturn={() => setView(NAV.JOURNAL)} />}
+      {view === NAV.ACTION && <ActionScreen onReturn={() => setView(NAV.AFFIRM_HUB)} />}
       {view === NAV.SETTINGS && (
         <Settings 
-          onFail={() => setView(NAV.JOURNAL)} 
+          onFail={() => setView(NAV.AFFIRM_HUB)} 
           onSettingsChange={handleSettingsChange} 
           hideTheme 
           font={settings.font} 

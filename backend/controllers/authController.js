@@ -42,11 +42,37 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({
+    console.error('Registration error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+      keyValue: error.keyValue,
+      errors: error.errors
+    });
+    
+    // More specific error messages based on error type
+    let errorMessage = 'Server error during registration';
+    let statusCode = 500;
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      statusCode = 400;
+      errorMessage = 'Email already in use';
+    } 
+    // Handle validation errors
+    else if (error.name === 'ValidationError') {
+      statusCode = 400;
+      errorMessage = Object.values(error.errors).map(err => err.message).join('. ');
+    }
+    
+    res.status(statusCode).json({
       success: false,
-      message: 'Server error during registration',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? {
+        message: error.message,
+        stack: error.stack.split('\n').map(line => line.trim())
+      } : undefined
     });
   }
 };
@@ -56,11 +82,23 @@ exports.register = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
+    console.log('Login attempt with data:', { email: req.body.email });
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      console.error('Missing email or password');
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide both email and password'
+      });
+    }
+
     // Check for user
+    console.log('Looking for user with email:', email);
     const user = await User.findOne({ email }).select('+password');
+    
     if (!user) {
+      console.error('No user found with email:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -68,8 +106,11 @@ exports.login = async (req, res) => {
     }
 
     // Check password
+    console.log('Checking password for user:', user._id);
     const isMatch = await user.comparePassword(password);
+    
     if (!isMatch) {
+      console.error('Invalid password for user:', user._id);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -77,23 +118,30 @@ exports.login = async (req, res) => {
     }
 
     // Generate token
+    console.log('Generating token for user:', user._id);
     const token = generateToken(user._id);
 
     // Set cookie
+    console.log('Setting cookie for user:', user._id);
     setTokenCookie(res, token);
 
+    const userResponse = {
+      id: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone
+    };
+
+    console.log('Login successful for user:', userResponse);
     res.json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone
-      }
+      user: userResponse
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error:', error.message);
+    console.error('Error details:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error during login',
@@ -107,14 +155,34 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      console.error('No user in request or missing user ID');
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    console.log('Fetching user with ID:', req.user.id);
     const user = await User.findById(req.user.id).select('-password');
     
+    if (!user) {
+      console.error('User not found with ID:', req.user.id);
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log('Successfully fetched user:', { id: user._id, email: user.email });
     res.json({
       success: true,
       data: user
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    console.error('Get user error:', error.message);
+    console.error('Error details:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Server error getting user',

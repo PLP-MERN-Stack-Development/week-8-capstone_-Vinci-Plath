@@ -5,7 +5,7 @@ A modern, production-ready MERN stack app for discreet personal safety, featurin
 ## 🌟 Features
 
 ### Core Safety Features
-- **Decoy Journal UI** - Appears as a regular notes app
+- **Affirm Hub** - A safe space for positive affirmations and resources
 - **Hidden SOS** - Discreet emergency alert system
 - **Check-In Timer** - Automatic alerts if you don't check in
 - **Location Sharing** - Sends your location with alerts
@@ -144,15 +144,15 @@ Authorization: Bearer <your_jwt_token>
    - Log in to access your personal safety dashboard
 
 ### Navigation
-- **Journal Screen (Home)**
-  - View and add journal entries (decoy feature)
-  - Access other features via swipe gestures
+- **Affirm Hub (Home)**
+  - View and interact with positive affirmations
+  - Access safety features via swipe gestures
 
-- **Action Screen (Swipe right from Journal)**
+- **Action Screen (Swipe right from Affirm Hub)**
   - Access SOS and Check-in features
 
 
-- **Settings (Swipe left from Journal)**
+- **Settings (Swipe left from Affirm Hub)**
   - Manage your profile
   - Configure safety settings
   - Set up emergency contacts
@@ -168,7 +168,7 @@ Authorization: Bearer <your_jwt_token>
 
 2. **What Happens Next**
    - Your emergency contacts receive an alert with your location.
-   - App returns to decoy journal screen.
+   - App returns to the Affirm Hub.
 
 #### ⏰ Safety Check-ins
 1. **Starting a Check-in Timer**
@@ -181,7 +181,7 @@ Authorization: Bearer <your_jwt_token>
 
 3. **Missed Check-ins**
    - If you don't cancel check in countdown and timer expires, app sends SOS alert to your emergency contacts.
-   - App returns to decoy journal screen.
+   - App returns to the Affirm Hub.
 
 ### Managing Emergency Contacts
 1. **Adding Contacts**

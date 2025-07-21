@@ -33,27 +33,23 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
+      // If we're already on the login page, don't try to refresh
+      if (window.location.pathname === '/login') {
+        return Promise.reject(error);
+      }
+      
       try {
-        // Try to refresh the token
-        const response = await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/auth/refresh-token`,
-          {},
-          { withCredentials: true }
-        );
+        // Try to get a new token by logging in again
+        // This requires the user to have their credentials stored securely
+        // For a production app, you'd want to implement a proper refresh token flow
         
-        const { token } = response.data;
-        localStorage.setItem('token', token);
+        // For now, just redirect to login
+        window.location.href = '/login';
+        return Promise.reject(error);
         
-        // Update the Authorization header
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        
-        // Retry the original request
-        return api(originalRequest);
       } catch (error) {
-        // If refresh token fails, redirect to login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        // If refresh fails, redirect to login
+        window.location.href = '/login';
         return Promise.reject(error);
       }
     }

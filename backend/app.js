@@ -10,6 +10,7 @@ const swaggerSpec = require('./config/swagger');
 // const performanceMonitoring = require('./middleware/performanceMonitoring');
 const healthRouter = require('./routes/health');
 const authRouter = require('./routes/auth');
+const sosRouter = require('./routes/sos');
 
 const app = express();
 
@@ -17,9 +18,29 @@ const app = express();
 // Temporarily disabled for Swagger testing
 // app.use(errorTracking);
 // app.use(performanceMonitoring);
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if the origin is in the allowed list
+    if (allowedOrigins.includes(origin) || 
+        process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -37,11 +58,45 @@ if (process.env.NODE_ENV !== 'production') {
 // API Routes
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/sos', sosRouter);
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const connectDB = async () => {
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI is not defined in environment variables');
+      }
+      
+      console.log('Connecting to MongoDB...');
+      await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+      });
+      
+      console.log('✅ Connected to MongoDB');
+      console.log(`   - Host: ${mongoose.connection.host}`);
+      console.log(`   - Database: ${mongoose.connection.name}`);
+      
+      // Log any database errors after initial connection
+      mongoose.connection.on('error', err => {
+        console.error('MongoDB connection error after initial connection:', err);
+      });
+      
+    } catch (err) {
+      console.error('❌ MongoDB connection error:', {
+        message: err.message,
+        code: err.code,
+        codeName: err.codeName,
+        name: err.name,
+        stack: err.stack
+      });
+      // Exit process with failure
+      process.exit(1);
+    }
+  }
+};
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -52,7 +107,18 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Only start the server if this file is run directly (not required for tests)
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 5000;
+  const server = app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+  
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+    server.close(() => process.exit(1));
+  });
+}
+
+module.exports = { app, connectDB };

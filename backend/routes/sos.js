@@ -1,6 +1,31 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const SOSEvent = require('../models/SOSEvent');
+const User = require('../models/User');
+
+// Authentication middleware
+const authenticate = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded.userId });
+
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    req.user = user;
+    req.token = token;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Please authenticate' });
+  }
+};
 
 /**
  * @swagger
@@ -62,15 +87,56 @@ const SOSEvent = require('../models/SOSEvent');
  *       401:
  *         description: Not authenticated
  */
-router.post('/', async (req, res) => {
+// Input validation middleware
+const validateSOSRequest = (req, res, next) => {
+  const { location } = req.body;
+  
+  if (!location || typeof location !== 'object') {
+    return res.status(400).json({ error: 'Location data is required' });
+  }
+  
+  const { lat, lng } = location;
+  if (lat === undefined || lng === undefined || 
+      typeof lat !== 'number' || typeof lng !== 'number' ||
+      isNaN(lat) || isNaN(lng)) {
+    return res.status(400).json({ 
+      error: 'Valid lat and lng numbers are required in location object' 
+    });
+  }
+  
+  next();
+};
+
+router.post('/', authenticate, validateSOSRequest, async (req, res) => {
   try {
-    const { location } = req.body; // { lat, lng }
-    const sosEvent = new SOSEvent({ location });
+    const { location } = req.body;
+    const sosEvent = new SOSEvent({ 
+      location,
+      user: req.user._id  // Associate SOS event with the user
+    });
+    
     await sosEvent.save();
+    
     // TODO: Integrate SMS sending here (stub for now)
-    res.status(201).json({ message: 'SOS alert triggered', sosEvent });
+    // In a real implementation, you would send SMS to emergency contacts here
+    
+    res.status(201).json({ 
+      success: true,
+      message: 'SOS alert triggered', 
+      sosEvent: {
+        _id: sosEvent._id,
+        location: sosEvent.location,
+        status: sosEvent.status,
+        timestamp: sosEvent.timestamp
+      }
+    });
   } catch (err) {
-    res.status(400).json({ error: 'Could not trigger SOS' });
+    console.error('SOS Error:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Could not trigger SOS',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
